@@ -5,18 +5,24 @@ import BancoModel.Table;
 import ConfigMongoDB.MongoConnection;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
+import com.mongodb.DBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.MongoClient;
+//import com.mongodb.AggregationOutput;
+import com.mongodb.AggregationOptions;
+import com.mongodb.Cursor;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.ArrayList;
 import sqlToMongoDAO.EntityDao;
 import sqlToMongoDAO.TabelaDao;
-
+import jsonJava.JSONArray;
+import jsonJava.JSONObject;
 
 
 public class MinNSL {
@@ -214,14 +220,36 @@ public class MinNSL {
             
             
             
-            /*
-             DBObject criteria = (DBObject) JSON.parse("{table:'" + tabela.getNome() + "'}");
-             DBObject projection = (DBObject) JSON.parse("{auto_inc:1}");
+             DBObject criteria = BasicDBObject.parse("{table:'" + tabela.getNome() + "'}");
+             DBObject projection = BasicDBObject.parse("{auto_inc:1}");            
+             //DBObject criteria = (DBObject) JSON.parse("{table:'" + tabela.getNome() + "'}");
+             //DBObject projection = (DBObject) JSON.parse("{auto_inc:1}");
              BasicDBObject criteria_ppl = new BasicDBObject("$match", criteria);
              BasicDBObject projection_ppl = new BasicDBObject("$project", projection);
-             AggregationOutput busca_auto_inc = dbCollection.aggregate(criteria_ppl, projection_ppl);
-             String json_str = busca_auto_inc.results().toString();
-
+             
+            // DEPRECATED:
+            // AggregationOutput busca_auto_inc = dbCollection.aggregate(criteria_ppl, projection_ppl);
+            // String json_str = busca_auto_inc.results().toString();
+            
+             // Updated ----
+             List<DBObject> aggregationQuery = new ArrayList<>();
+             aggregationQuery.add(criteria_ppl);
+             aggregationQuery.add(projection_ppl);
+             AggregationOptions options = AggregationOptions.builder()
+                                                            .build();
+             Cursor cursor = dbCollection.aggregate(aggregationQuery, options);
+             System.out.println("json_str");
+             String json_str = "[";
+             while (cursor.hasNext() ) {
+                DBObject obj = cursor.next();
+                json_str = json_str + obj.toString();
+                if (cursor.hasNext()) {
+                    json_str = json_str + ",";
+                }
+             }
+             json_str = json_str + "]";
+             System.out.println(json_str);
+             // End updated ----
              JSONArray array = new JSONArray(json_str);
              JSONObject result_set;
              String valor_auto_inc = null;
@@ -245,9 +273,10 @@ public class MinNSL {
              }
              String sequence_field = "seq"; // the name of the field which holds the sequence
              DBCollection seq = MongoConnection.getInstance().getDB().getCollection("seq"); // get the collection (this will create it if needed)
-             DBObject new_seq = (DBObject) JSON.parse("{'_id':'" + tabela.getNome() + "', 'seq':" + maximo_id + "}");
+             DBObject new_seq = BasicDBObject.parse("{'_id':'" + tabela.getNome() + "', 'seq':" + maximo_id + "}");
+             //DBObject new_seq = (DBObject) JSON.parse("{'_id':'" + tabela.getNome() + "', 'seq':" + maximo_id + "}");
              seq.insert(new_seq);
-             */
+             
              new EntityDao<>().ensureIndex(tabela);
         }
     }
